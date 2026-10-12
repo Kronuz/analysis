@@ -1,0 +1,52 @@
+nonword 35 [a b] [1 2] [1 a] [1 a] [a b] [c#] [c###] [c] [a b#]
+nonword 38 [a&b] [1 2] [a&1] [1&a] [a&b] [c] [c] [c] [a&b]
+nonword 39 [a'b] [1 2] [a'1] [1'a] [a'b] [c] [c] [c] [a'b]
+nonword 43 [a b] [1 2] [1 a] [1 a] [a b] [c+] [c+++] [c] [a b+]
+nonword 44 [a b] [1,2] [1 a] [1 a] [a b] [c] [c] [c] [a b]
+nonword 46 [a b] [1.2] [1 a] [1 a] [ab] [c] [c] [c] [ab]
+nonword 59 [a b] [1;2] [1 a] [1 a] [a b] [c] [c] [c] [a b]
+nonword 173 [ab] [1 2] [a1] [1a] [ab] [c] [c] [c] [ab]
+nonword 183 [a·b] [1 2] [a·1] [1·a] [a·b] [c] [c] [c] [a·b]
+nonword 894 [a b] [1;2] [1 a] [1 a] [a b] [c] [c] [c] [a b]
+nonword 1417 [a b] [1։2] [1 a] [1 a] [a b] [c] [c] [c] [a b]
+nonword 1524 [a״b] [1 2] [a״1] [1״a] [a״b] [c] [c] [c] [a״b]
+nonword 1549 [a b] [1؍2] [1 a] [1 a] [a b] [c] [c] [c] [a b]
+nonword 2040 [a b] [1߸2] [1 a] [1 a] [a b] [c] [c] [c] [a b]
+nonword 8203 [a b] [12] [1 a] [1 a] [a b] [c] [c] [c] [a b]
+nonword 8204 [ab] [12] [a1] [1a] [ab] [c] [c] [c] [ab]
+nonword 8205 [ab] [12] [a1] [1a] [ab] [c] [c] [c] [ab]
+nonword 8217 [a'b] [1 2] [a'1] [1'a] [a'b] [c] [c] [c] [a'b]
+nonword 8219 [a'b] [1 2] [a'1] [1'a] [a'b] [c] [c] [c] [a'b]
+nonword 8231 [a‧b] [1 2] [a‧1] [1‧a] [a‧b] [c] [c] [c] [a‧b]
+nonword 8260 [a b] [1⁄2] [1 a] [1 a] [a b] [c] [c] [c] [a b]
+nonword 8288 [ab] [12] [a1] [1a] [ab] [c] [c] [c] [ab]
+nonword 65040 [a b] [1︐2] [1 a] [1 a] [a b] [c] [c] [c] [a b]
+nonword 65043 [a b] [1︓2] [1 a] [1 a] [a b] [c] [c] [c] [a b]
+nonword 65044 [a b] [1︔2] [1 a] [1 a] [a b] [c] [c] [c] [a b]
+nonword 65279 [ab] [12] [a1] [1a] [ab] [c] [c] [c] [ab]
+acronym 65
+acronym 66
+acronym 67
+acronym 68
+acronym 69
+acronym 70
+acronym 71
+acronym 72
+acronym 73
+acronym 74
+acronym 75
+acronym 76
+acronym 77
+acronym 78
+acronym 79
+acronym 80
+acronym 81
+acronym 82
+acronym 83
+acronym 84
+acronym 85
+acronym 86
+acronym 87
+acronym 88
+acronym 89
+acronym 90

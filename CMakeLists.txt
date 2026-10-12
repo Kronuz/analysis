@@ -1,0 +1,33 @@
+cmake_minimum_required(VERSION 3.14)
+project(analysis LANGUAGES C CXX)
+
+include(FetchContent)
+FetchContent_Declare(unicode GIT_REPOSITORY https://github.com/Kronuz/unicode.git GIT_TAG 81219c39deca91ed0186fb5eebd2afcec6f5f8c7)
+FetchContent_Declare(snowball GIT_REPOSITORY https://github.com/Kronuz/snowball.git GIT_TAG 8b0c540173f8f48afc00cd8ab49ce956397992b6)
+FetchContent_MakeAvailable(unicode snowball)
+
+# Header-only: analysis.hh is the whole implementation.
+add_library(analysis INTERFACE)
+target_include_directories(analysis INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_compile_features(analysis INTERFACE cxx_std_20)
+target_link_libraries(analysis INTERFACE unicode::unicode snowball::snowball)
+add_library(analysis::analysis ALIAS analysis)
+
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  enable_testing()
+  add_executable(analysis_test test/test.cc)
+  target_link_libraries(analysis_test PRIVATE analysis)
+  add_test(NAME analysis COMMAND analysis_test "${CMAKE_CURRENT_SOURCE_DIR}/test/vectors")
+endif()
+
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  add_executable(analysis_bench bench/bench.cc)
+  target_link_libraries(analysis_bench PRIVATE analysis)
+  option(ANALYSIS_FUZZ "Build the libFuzzer target" OFF)
+  if(ANALYSIS_FUZZ)
+    add_executable(analysis_fuzz fuzz/fuzz_index.cc)
+    target_link_libraries(analysis_fuzz PRIVATE analysis)
+    target_compile_options(analysis_fuzz PRIVATE -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=all)
+    target_link_options(analysis_fuzz PRIVATE -fsanitize=fuzzer,address,undefined)
+  endif()
+endif()
