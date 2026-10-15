@@ -1,5 +1,7 @@
 # analysis
 
+[![CI](https://github.com/Kronuz/analysis/actions/workflows/ci.yml/badge.svg)](https://github.com/Kronuz/analysis/actions/workflows/ci.yml)
+
 Text to index terms for C++20, reproducing Xapian's `TermGenerator`: the same words,
 case folding, `Z`-prefixed stems, stop strategies, CJK n-grams, wdf, and positions.
 Header-only; depends on [unicode](https://github.com/Kronuz/unicode) and
