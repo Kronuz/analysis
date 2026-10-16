@@ -1,0 +1,9 @@
+# analysis: one pass from text to terms. Render: d2 --layout elk --sketch --theme 302 docs/analysis.d2 docs/analysis.svg
+direction: right
+text: "\"The quick brown foxes\"" {shape: page}
+words: "words\nthe · quick · brown · foxes"
+terms: "terms with positions\nthe@1 quick@2 brown@3 foxes@4"
+stems: "Z stems, positionless\nZthe Zquick Zbrown Zfox"
+text -> words: "split, fold case,\ninfixes, acronyms"
+words -> terms
+words -> stems: "snowball stemmer\n(strategy some)"
