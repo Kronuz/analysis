@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.14)
 project(analysis LANGUAGES C CXX)
 
 include(FetchContent)
-FetchContent_Declare(unicode GIT_REPOSITORY https://github.com/Kronuz/unicode.git GIT_TAG 81219c39deca91ed0186fb5eebd2afcec6f5f8c7)
-FetchContent_Declare(snowball GIT_REPOSITORY https://github.com/Kronuz/snowball.git GIT_TAG 8b0c540173f8f48afc00cd8ab49ce956397992b6)
+FetchContent_Declare(unicode GIT_REPOSITORY https://github.com/Kronuz/unicode.git GIT_TAG c93026cedf9124421886d449528dd6edb16e5ed3)
+FetchContent_Declare(snowball GIT_REPOSITORY https://github.com/Kronuz/snowball.git GIT_TAG 570a0b78fc2967f9ec6a0ec005547d20fcf32b61)
 FetchContent_MakeAvailable(unicode snowball)
 
 # Header-only: analysis.hh is the whole implementation.
