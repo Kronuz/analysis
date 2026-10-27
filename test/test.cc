@@ -2,6 +2,7 @@
 // per-code-point sweeps (chars.txt, infix.txt) recorded by strata-oracle, in argv[1].
 #include "analysis.hh"
 
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -252,6 +253,90 @@ int main(int argc, char** argv) {
 	g.increase_termpos();
 	auto second = run(g, "three");
 	CHECK(second["three"].second == std::vector<std::uint32_t>{103});
+
+	// The public word scanner collects one lowercased word or acronym and says where it ends.
+	{
+		analysis::word_scanner ws;
+		const std::string_view in = "Obama's U.S.A. c++ x";
+		const char* p = in.data();
+		const char* const end = p + in.size();
+		std::vector<std::string> got;
+		while (p < end) {
+			const char* q = p;
+			if (!analysis::is_word_char(unicode::next_utf8(q, end))) { p = q; continue; }
+			p = ws.scan(p, end);
+			got.push_back(ws.text());
+		}
+		CHECK((got == std::vector<std::string>{"obama's", "usa", "c++", "x"}));
+	}
+
+	// Acronym chains: scanning is linear and yields the words of an unmemoized walk.
+	{
+		// The acronym rule without the failed-chain memory.
+		auto reference = [](const char* p, const char* end, std::string& out) -> const char* {
+			auto up = [](char c) { return c >= 'A' && c <= 'Z'; };
+			if (end - p < 3 || !up(p[0]) || p[1] != '.' || !up(p[2])) { return nullptr; }
+			out.assign(1, char(p[0] - 'A' + 'a'));
+			const char* q = p + 1;
+			while (end - q >= 2 && q[0] == '.' && up(q[1])) {
+				out.push_back(char(q[1] - 'A' + 'a'));
+				q += 2;
+			}
+			if (q < end && *q == '.') { ++q; }
+			if (q < end) {
+				const char* r = q;
+				if (analysis::is_word_char(unicode::next_utf8(r, end))) { return nullptr; }
+			}
+			return q;
+		};
+		auto words = [&](const std::string& in, bool memo) {
+			analysis::word_scanner ws, plain;
+			std::string out, acr;
+			const char* p = in.data();
+			const char* const end = p + in.size();
+			while (p < end) {
+				const char* q = p;
+				if (!analysis::is_word_char(unicode::next_utf8(q, end))) { p = q; continue; }
+				if (memo) {
+					p = ws.scan(p, end);
+					out += ws.text();
+				} else if (const char* r = reference(p, end, acr)) {
+					p = r;
+					out += acr;
+				} else {
+					p = plain.word(p, end);
+					out += plain.text();
+				}
+				out += '|';
+			}
+			return out;
+		};
+		std::uint32_t seed = 12345;
+		const char alphabet[] = "AAABBb.. x1";
+		for (int i = 0; i < 20000; ++i) {
+			std::string in(1 + seed % 40, ' ');
+			for (char& c : in) {
+				seed = seed * 1664525u + 1013904223u;
+				c = alphabet[(seed >> 16) % (sizeof alphabet - 1)];
+			}
+			CHECK(words(in, true) == words(in, false));
+			if (failures) { std::fprintf(stderr, "input: %s\n", in.c_str()); break; }
+		}
+
+		using clock = std::chrono::steady_clock;
+		std::string chain;
+		while (chain.size() < 65536) { chain += "A."; }
+		chain += "x";
+		const auto t0 = clock::now();
+		std::size_t terms = 0;
+		analysis::term_generator tg;
+		tg.stem = analysis::stem_strategy::none;
+		tg.index_text(chain, [&](std::string_view, std::uint32_t, std::uint32_t) { ++terms; });
+		const double secs = std::chrono::duration<double>(clock::now() - t0).count();
+		CHECK(terms == 32768 + 1);   // a, a, ... and x
+		CHECK(secs < 0.5);  // the quadratic walk took 1.9 s here
+		if (secs >= 0.5) { std::fprintf(stderr, "acronym chain of 64 KiB: %.3f s\n", secs); }
+	}
 
 	std::printf("analysis: %zu vectors, %zu code points: %s\n", vectors, code_points, failures ? "FAILED" : "ok");
 	return failures ? EXIT_FAILURE : EXIT_SUCCESS;
