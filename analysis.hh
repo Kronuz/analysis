@@ -251,26 +251,41 @@ public:
 		return q;
 	}
 
+	// Forgets the failed acronym chain a scan remembers. Call it when the text scanned
+	// changes under the same pointers; scanning a new buffer needs no reset.
+	void reset() noexcept { fail_from_ = fail_to_ = fail_end_ = nullptr; }
+
 	// An acronym: single ASCII capitals separated by periods ("U.S.A.", "A.B"), not
 	// followed by a word character. Collects it into text_ and returns where it ends.
 	const char* acronym(const char* p, const char* end) {
 		if (end - p < 3 || !detail::is_acronym_letter(p[0]) || p[1] != '.' || !detail::is_acronym_letter(p[2])) { return nullptr; }
+		// Every start on a chain that failed fails the same way: scan the chain once.
+		if (end == fail_end_ && p >= fail_from_ && p < fail_to_ && (p - fail_from_) % 2 == 0) { return nullptr; }
 		text_.assign(1, char(p[0] - 'A' + 'a'));
 		const char* q = p + 1;
 		while (end - q >= 2 && q[0] == '.' && detail::is_acronym_letter(q[1])) {
 			text_.push_back(char(q[1] - 'A' + 'a'));
 			q += 2;
 		}
+		const char* const chain_end = q;
 		if (q < end && *q == '.') { ++q; }
 		if (q < end) {
 			const char* r = q;
-			if (is_word_char(unicode::next_utf8(r, end))) { return nullptr; }
+			if (is_word_char(unicode::next_utf8(r, end))) {
+				fail_from_ = p;
+				fail_to_ = chain_end;
+				fail_end_ = end;
+				return nullptr;
+			}
 		}
 		return q;
 	}
 
 private:
 	std::string text_;
+	const char* fail_from_ = nullptr;  // the last failed acronym chain [from, to) in a text ending at end
+	const char* fail_to_ = nullptr;
+	const char* fail_end_ = nullptr;
 };
 
 class term_generator {
@@ -293,6 +308,7 @@ public:
 	void index_text(std::string_view text, Sink&& sink, const field& f = {}) {
 		if ((stem == stem_strategy::all || stem == stem_strategy::all_z) && !stemmer) { return; }
 		scanner_.cjk_ngram = cjk_ngram;
+		scanner_.reset();
 		const char* p = text.data();
 		const char* const end = p + text.size();
 		while (p < end) {
