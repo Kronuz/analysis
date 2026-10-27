@@ -184,52 +184,29 @@ struct field {
 	bool positions = true;
 };
 
-class term_generator {
+// The word rules of the term generator, usable on their own: collects the word or
+// acronym at a position into text(), lowercased.
+class word_scanner {
 public:
-	stem_strategy stem = stem_strategy::some;
-	stop_strategy stop = stop_strategy::stemmed;
 	bool cjk_ngram = false;
-	std::size_t max_word_length = 64;  // in bytes, after lowercasing; longer words are dropped
-	snowball::stemmer* stemmer = nullptr;
-	const analysis::stopper* stop_words = nullptr;
 
-	std::uint32_t termpos() const noexcept { return termpos_; }
-	void set_termpos(std::uint32_t pos) noexcept { termpos_ = pos; }
-	void increase_termpos(std::uint32_t delta = 100) noexcept { termpos_ += delta; }
+	// The most recently collected word.
+	const std::string& text() const noexcept { return text_; }
 
-	// Calls sink(std::string_view term, std::uint32_t wdf_inc, std::uint32_t position) for
-	// each term; position 0 means the term has no position. Positions continue from
-	// termpos().
-	template <class Sink>
-	void index_text(std::string_view text, Sink&& sink, const field& f = {}) {
-		if ((stem == stem_strategy::all || stem == stem_strategy::all_z) && !stemmer) { return; }
-		const char* p = text.data();
-		const char* const end = p + text.size();
-		while (p < end) {
-			const char* q = p;
-			const char32_t c = unicode::next_utf8(q, end);
-			if (!is_word_char(c)) {
-				p = q;
-			} else if (cjk_ngram && is_ngram_char(c)) {
-				p = ngrams(p, end, sink, f);
-			} else if (const char* after = acronym(p, end)) {
-				emit(word_, true, sink, f);
-				p = after;
-			} else {
-				p = word(p, end);
-				emit(word_, true, sink, f);
-			}
-		}
+	// Collects the word at p, which must start with a word character, and returns where it
+	// ends. An acronym ("U.S.A.") is taken whole when one starts at p.
+	const char* scan(const char* p, const char* end) {
+		if (const char* after = acronym(p, end)) { return after; }
+		return word(p, end);
 	}
 
-private:
-	// Collects the word at p into word_ and returns where it ends.
+	// Collects the word at p into text_ and returns where it ends.
 	const char* word(const char* p, const char* end) {
-		word_.clear();
+		text_.clear();
 		const char* q = p;
 		char32_t c = unicode::next_utf8(q, end);
 		for (;;) {
-			unicode::append_utf8(word_, unicode::tolower(c));
+			unicode::append_utf8(text_, unicode::tolower(c));
 			const char32_t prev = c;
 			p = q;
 			// Skip ignorables, then continue with a word character or a valid infix.
@@ -250,7 +227,7 @@ private:
 				if (r > q && is_word_char(next) && !(cjk_ngram && is_ngram_char(next))) {
 					const bool both_digits = detail::is_digit(prev) && detail::is_digit(next);
 					if (in.kind == detail::infix::letter ? !both_digits : both_digits) {
-						if (in.append) { unicode::append_utf8(word_, in.append); }
+						if (in.append) { unicode::append_utf8(text_, in.append); }
 						c = next;
 						q = r;
 						continue;
@@ -270,18 +247,18 @@ private:
 			const char* r = q;
 			if (is_word_char(unicode::next_utf8(r, end))) { return p; }
 		}
-		word_.append(p, q);
+		text_.append(p, q);
 		return q;
 	}
 
 	// An acronym: single ASCII capitals separated by periods ("U.S.A.", "A.B"), not
-	// followed by a word character. Collects it into word_ and returns where it ends.
+	// followed by a word character. Collects it into text_ and returns where it ends.
 	const char* acronym(const char* p, const char* end) {
 		if (end - p < 3 || !detail::is_acronym_letter(p[0]) || p[1] != '.' || !detail::is_acronym_letter(p[2])) { return nullptr; }
-		word_.assign(1, char(p[0] - 'A' + 'a'));
+		text_.assign(1, char(p[0] - 'A' + 'a'));
 		const char* q = p + 1;
 		while (end - q >= 2 && q[0] == '.' && detail::is_acronym_letter(q[1])) {
-			word_.push_back(char(q[1] - 'A' + 'a'));
+			text_.push_back(char(q[1] - 'A' + 'a'));
 			q += 2;
 		}
 		if (q < end && *q == '.') { ++q; }
@@ -292,6 +269,47 @@ private:
 		return q;
 	}
 
+private:
+	std::string text_;
+};
+
+class term_generator {
+public:
+	stem_strategy stem = stem_strategy::some;
+	stop_strategy stop = stop_strategy::stemmed;
+	bool cjk_ngram = false;
+	std::size_t max_word_length = 64;  // in bytes, after lowercasing; longer words are dropped
+	snowball::stemmer* stemmer = nullptr;
+	const analysis::stopper* stop_words = nullptr;
+
+	std::uint32_t termpos() const noexcept { return termpos_; }
+	void set_termpos(std::uint32_t pos) noexcept { termpos_ = pos; }
+	void increase_termpos(std::uint32_t delta = 100) noexcept { termpos_ += delta; }
+
+	// Calls sink(std::string_view term, std::uint32_t wdf_inc, std::uint32_t position) for
+	// each term; position 0 means the term has no position. Positions continue from
+	// termpos().
+	template <class Sink>
+	void index_text(std::string_view text, Sink&& sink, const field& f = {}) {
+		if ((stem == stem_strategy::all || stem == stem_strategy::all_z) && !stemmer) { return; }
+		scanner_.cjk_ngram = cjk_ngram;
+		const char* p = text.data();
+		const char* const end = p + text.size();
+		while (p < end) {
+			const char* q = p;
+			const char32_t c = unicode::next_utf8(q, end);
+			if (!is_word_char(c)) {
+				p = q;
+			} else if (cjk_ngram && is_ngram_char(c)) {
+				p = ngrams(p, end, sink, f);
+			} else {
+				p = scanner_.scan(p, end);
+				emit(scanner_.text(), true, sink, f);
+			}
+		}
+	}
+
+private:
 	// Emits a run of n-gram characters as positional unigrams and positionless bigrams.
 	template <class Sink>
 	const char* ngrams(const char* p, const char* end, Sink& sink, const field& f) {
@@ -356,6 +374,7 @@ private:
 	}
 
 	std::uint32_t termpos_ = 0;
+	word_scanner scanner_;
 	std::string word_, prev_, term_;
 };
 

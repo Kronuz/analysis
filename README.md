@@ -59,6 +59,10 @@ a non-owning `stemmer` and `stop_words`, and the running position (`termpos`,
 `set_termpos`, `increase_termpos`). The sink receives each term occurrence with its wdf
 increment and position (0 for none); the view is valid during the call.
 
+`word_scanner` is the word rule on its own: `scan(p, end)` collects the lowercased word or
+acronym starting at `p` into `text()` and returns where it ends, so a query parser sees the
+same words as the indexer. Set its `cjk_ngram` as the generator's.
+
 ## ⚡ Performance
 
 Indexing 10,000 English Wikipedia articles (9.6 MB) into per-document maps of terms to

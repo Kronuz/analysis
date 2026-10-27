@@ -253,6 +253,22 @@ int main(int argc, char** argv) {
 	auto second = run(g, "three");
 	CHECK(second["three"].second == std::vector<std::uint32_t>{103});
 
+	// The public word scanner collects one lowercased word or acronym and says where it ends.
+	{
+		analysis::word_scanner ws;
+		const std::string_view in = "Obama's U.S.A. c++ x";
+		const char* p = in.data();
+		const char* const end = p + in.size();
+		std::vector<std::string> got;
+		while (p < end) {
+			const char* q = p;
+			if (!analysis::is_word_char(unicode::next_utf8(q, end))) { p = q; continue; }
+			p = ws.scan(p, end);
+			got.push_back(ws.text());
+		}
+		CHECK((got == std::vector<std::string>{"obama's", "usa", "c++", "x"}));
+	}
+
 	std::printf("analysis: %zu vectors, %zu code points: %s\n", vectors, code_points, failures ? "FAILED" : "ok");
 	return failures ? EXIT_FAILURE : EXIT_SUCCESS;
 }
