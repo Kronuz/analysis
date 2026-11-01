@@ -9,7 +9,7 @@ test/vectors/          termgen.jsonl, termgen-xapiand.jsonl, chars.txt, infix.tx
 fuzz/fuzz_index.cc     libFuzzer: valid UTF-8 terms, bounded length, increasing positions.
 bench/bench.cc         MB/s and ns per term over a JSON-lines corpus.
 docs/RULES.md          Every tokenization rule (keep in sync with the vectors).
-docs/analysis.d2       README diagram; render: d2 --layout elk --sketch --theme 302 docs/analysis.d2 docs/analysis.svg
+docs/API.md            term_generator, field, word_scanner, stopper.
 ```
 
 ## Invariants
