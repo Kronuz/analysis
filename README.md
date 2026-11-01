@@ -9,14 +9,14 @@ Part of [Kronuz C++ Libraries](https://github.com/Kronuz/cpp-libraries), a colle
 
 Header-only text analyzer for C++20: turns text into index terms exactly as Xapian's
 TermGenerator does. Words, case folding, `Z`-prefixed stems, stop words, CJK n-grams, wdf
-and positions all match Xapian 2.1.0, at 1.8 times its speed. Reach for it when the terms
+and positions all match Xapian 2.1.0, at 1.8 to 2.7 times its speed. Reach for it when the terms
 you index have to match a Xapian index or a Xapian-style query parser.
 
 ## ✨ Highlights
 
 - **Xapian-exact.** The same terms, wdf and positions as Xapian 2.1.0, checked against 966
   recorded oracle vectors and sweeps over all 1,114,112 code points.
-- **1.8 times Xapian's speed** indexing English Wikipedia, with and without stemming
+- **1.8 to 2.7 times Xapian's speed** indexing English Wikipedia, with and without stemming
   ([Performance](#-performance)).
 - **Unicode-aware.** UTF-8 with an ISO-8859-1 fallback, infixes such as `3.14` and
   `o'clock`, suffixes such as `c++`, acronyms such as `U.S.A.`, and CJK n-grams.
@@ -82,24 +82,25 @@ Not for:
 ## ⚡ Performance
 
 `analysis_bench` indexes the `"text"` field of each line of a JSON-lines corpus into a
-per-document map of terms to wdf and positions, and reports MB/s of input text (higher is
-faster). The corpus is 10,000 English Wikipedia articles (9.6 MB) from the
+per-document map of terms to wdf and positions, and reports MB/s of input text (higher is faster).
+The corpus is 10,000 English Wikipedia articles (9.6 MB) from the
 [search-benchmark-game](https://github.com/quickwit-oss/search-benchmark-game) corpus. The rows
 are the stemming strategy: `none` (`analysis::stem_strategy::none`) indexes each word as it is,
 and `some` (`stem_strategy::some`) also adds the `Z`-prefixed English stem of each word that
-starts with a letter. The comparator is [Xapian](https://xapian.org/) 2.1.0's `TermGenerator`
-with `STEM_NONE` or `STEM_SOME`, indexing the same text into a `Xapian::Document`. Before it
-times anything the benchmark checks that, for every document, the `Xapian::Document` holds
-exactly the terms, wdfs and positions of the map, and it stops otherwise. Best of three, Apple
-clang 17.0.0 with `-O3` on an Intel Core i9-9980HK (macOS 15.8):
+starts with a letter. The comparator is [Xapian](https://xapian.org/) 2.1.0's `TermGenerator` with
+`STEM_NONE` or `STEM_SOME`, indexing the same text into a `Xapian::Document`. Before it times
+anything the benchmark checks that, for every document, the `Xapian::Document` holds exactly the
+terms, wdfs and positions of the map, and it stops otherwise. `× faster` is `analysis`'s speed
+over Xapian's. Best of three passes, then the best of two runs, with Apple clang 17.0.0 and `-O3`
+on an Apple M4 Pro (macOS 26.7) and an Intel Core i9-9980HK (macOS 15.8):
 
-| Strategy | `analysis` | Xapian 2.1.0 | `analysis` × faster |
-|---|---:|---:|---:|
-| `none` | 29.4 MB/s | 16.1 MB/s | 1.8 |
-| `some`, English stemmer | 12.0 MB/s | 6.7 MB/s | 1.8 |
+| Strategy | `analysis`, M4 Pro | Xapian 2.1.0, M4 Pro | M4 Pro, × faster | `analysis`, i9-9980HK | Xapian 2.1.0, i9-9980HK | i9-9980HK, × faster |
+|---|---:|---:|---:|---:|---:|---:|
+| `none` | 81.8 MB/s | 30.6 MB/s | 2.7 | 32.3 MB/s | 17.0 MB/s | 1.9 |
+| `some`, English stemmer | 30.4 MB/s | 13.2 MB/s | 2.3 | 12.9 MB/s | 7.1 MB/s | 1.8 |
 
-Xapian is found, never fetched, and only when asked for, so the library and a default build do
-not need it (it needs Xapian 2.1 and `pkg-config`):
+Xapian is found, never fetched, and only when asked for, so the library and a default build do not
+need it (it needs Xapian 2.1 and `pkg-config`):
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DANALYSIS_BENCH_XAPIAN=ON
