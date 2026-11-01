@@ -81,23 +81,33 @@ Not for:
 
 ## ⚡ Performance
 
-Indexing 10,000 English Wikipedia articles (9.6 MB) into per-document maps of terms to wdf
-and positions, best of three, on an Intel Core i9-9980HK with Apple clang `-O3`. The Xapian
-column is Xapian 2.1.0's `TermGenerator` indexing the same articles into a
-`Xapian::Document`, from a separate harness outside this repository.
+`analysis_bench` indexes the `"text"` field of each line of a JSON-lines corpus into a
+per-document map of terms to wdf and positions, and reports MB/s of input text (higher is
+faster). The corpus is 10,000 English Wikipedia articles (9.6 MB) from the
+[search-benchmark-game](https://github.com/quickwit-oss/search-benchmark-game) corpus. The rows
+are the stemming strategy: `none` (`analysis::stem_strategy::none`) indexes each word as it is,
+and `some` (`stem_strategy::some`) also adds the `Z`-prefixed English stem of each word that
+starts with a letter. The comparator is [Xapian](https://xapian.org/) 2.1.0's `TermGenerator`
+with `STEM_NONE` or `STEM_SOME`, indexing the same text into a `Xapian::Document`. Before it
+times anything the benchmark checks that, for every document, the `Xapian::Document` holds
+exactly the terms, wdfs and positions of the map, and it stops otherwise. Best of three, Apple
+clang 17.0.0 with `-O3` on an Intel Core i9-9980HK (macOS 15.8):
 
-| Strategy | analysis | Xapian 2.1.0 | Ratio |
+| Strategy | `analysis` | Xapian 2.1.0 | `analysis` × faster |
 |---|---:|---:|---:|
-| `none` | 29.4 MB/s | 16.1 MB/s | 1.8x |
-| `some`, English stemmer | 12.0 MB/s | 6.7 MB/s | 1.8x |
+| `none` | 29.4 MB/s | 16.1 MB/s | 1.8 |
+| `some`, English stemmer | 12.0 MB/s | 6.7 MB/s | 1.8 |
 
-`bench/bench.cc` reads the `"text"` field of each line of a JSON-lines corpus:
+Xapian is found, never fetched, and only when asked for, so the library and a default build do
+not need it (it needs Xapian 2.1 and `pkg-config`):
 
 ```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DANALYSIS_BENCH_XAPIAN=ON
 cmake --build build
 build/analysis_bench enwiki.jsonl 10000
 ```
+
+Without `ANALYSIS_BENCH_XAPIAN` the benchmark prints the `analysis` rows only.
 
 ## 📚 Documentation
 
