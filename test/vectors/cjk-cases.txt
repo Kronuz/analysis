@@ -1,0 +1,38 @@
+# Inputs for tools/icu_compare.cc vectors: one text per line, escapes \n \r \t \\ \uXXXX \UXXXXXXXX.
+# UAX #29 rules, as ICU's word.txt states them.
+The quick (“brown”) fox can’t jump 32.3 feet, right?
+can't won't O'Reilly l'objet a'b a''b 'a' a.b a:b a;b 3.14 3,141 3;4 3'4 1.2.3 a1 1a 1_a a_1 __ _ a_ _a
+foo.bar@example.com http://www.example.com/path?x=1&y=2 C++ c# $100 €5 50% #hashtag @user
+א׳ א"ב א'ב א'
+a\r\nb\n\nc\r\rd\u0085e f\u000Bg
+a  b\t\tc　　d ​ e
+́a ́́a áb a­b 1́.́2 a‍b
+\U0001F1E6\U0001F1E7\U0001F1E8 \U0001F1E6́\U0001F1E7 \U0001F44D\U0001F3FB \U0001F468‍\U0001F469‍\U0001F467 ❤️ a‍\U0001F44D
+﻿text ﻿﻿a a⁠b
+Ａｂｃ１２３ ｶﾀｶﾅ ﾃｽﾄ ｶﾞｷﾞｸﾞ ﾊﾟﾋﾟﾌﾟ
+# Katakana, Hiragana, Han, Hangul, and mixes with other scripts.
+カタカナ ひらがな 漢字 한국어 กขค
+カタカナとひらがなと漢字
+ニュース・ヘッドライン ニュース·ヘッドライン カ_タ カー ーカ ー
+abcカタカナ123漢字def 漢字abc 1漢 a한 한a 한1
+대한민국의 수도는 서울이다. 한국어 문장을 단어로 나눈다!
+안녕하세요́ 가‍나 가나다라마바사아자차카타파하
+# Chinese and Japanese through the dictionary.
+中华人民共和国成立于一九四九年。
+我们在大学里学习计算机科学和自然语言处理。
+這是一個繁體中文的句子，用來測試斷詞。
+私は東京大学の学生です。日本語の文章を単語に分割します。
+コンピューターとインターネットの時代に、データベースの検索エンジンが重要だ。
+すもももももももものうち
+アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモ
+アイウエオカキクケコサシスセソタチツテ
+アイウエオカキクケコサシスセソタチツ
+ｺﾝﾋﾟｭｰﾀｰとｲﾝﾀｰﾈｯﾄ
+ｶﾞｲﾄﾞﾌﾞｯｸ ｳﾞｧｲｵﾘﾝ ﾊﾞﾊﾟ ﾞｶ ﾟﾟ ｶﾞﾞ
+豈更車 ⼀⼁⼂ ㌀㌁ ゟヿ
+\U00020000\U00020001漢字\U0002A6D6 𠮷野家で食べた
+日\U00016FF0本\U00016FF1語 ｶ\U00016FF0ﾞ
+々々 〆切 〇〇 時々 人々は
+今日ばいい天気 漢゛字 漢〱字 ー漢字 漢字ー ゛ー漢 〱ーカ
+東京́都 東京︀都 東‍京
+日本語ｶﾀｶﾅ日本語
