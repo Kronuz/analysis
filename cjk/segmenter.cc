@@ -259,30 +259,38 @@ void segmenter::divide_range(std::size_t begin, std::size_t end) {
 	const char* const base = text_.data();
 	chars_.clear();
 	offsets_.clear();
+	bool changes = false;  // a character NFKC may change
 	for (const char* p = base + begin; p < base + end;) {
 		offsets_.push_back(std::size_t(p - base));
 		chars_.push_back(unicode::next_utf8(p, base + end));
+		changes |= class_of(chars_.back()) & tables::nfkc_bit;
 	}
 	offsets_.push_back(end);
 
-	normalized_.clear();
-	map_.clear();
-	for (std::size_t i = 0; i < chars_.size();) {
-		std::size_t j = i + 1;
-		while (j < chars_.size() && !has_boundary_before(chars_[j])) { ++j; }
-		nfkc_fragment(std::u32string_view(chars_).substr(i, j - i), fragment_, normalized_);
-		map_.resize(normalized_.size(), offsets_[i]);  // the fragment's characters map to its start
-		i = j;
-	}
-	if (normalized_ == chars_) {
-		map_ = offsets_;
-	} else {
+	const std::u32string* text = &chars_;
+	const std::vector<std::size_t>* map = &offsets_;
+	if (changes) {
+		normalized_.clear();
+		map_.clear();
+		for (std::size_t i = 0; i < chars_.size();) {
+			std::size_t j = i + 1;
+			while (j < chars_.size() && !has_boundary_before(chars_[j])) { ++j; }
+			nfkc_fragment(std::u32string_view(chars_).substr(i, j - i), fragment_, normalized_);
+			map_.resize(normalized_.size(), offsets_[i]);  // the fragment's characters map to its start
+			i = j;
+		}
 		map_.push_back(end);
+		if (normalized_ != chars_) {
+			text = &normalized_;
+			map = &map_;
+		}
 	}
+	const std::u32string& normalized = *text;
+	const std::vector<std::size_t>& positions = *map;
 
-	const std::size_t n = normalized_.size();
+	const std::size_t n = normalized.size();
 	ids_.resize(n);
-	for (std::size_t i = 0; i < n; ++i) { ids_[i] = id_of(normalized_[i]); }
+	for (std::size_t i = 0; i < n; ++i) { ids_[i] = id_of(normalized[i]); }
 
 	constexpr std::uint32_t unreached = std::numeric_limits<std::uint32_t>::max();
 	cost_.assign(n + 1, unreached);
@@ -300,7 +308,7 @@ void segmenter::divide_range(std::size_t begin, std::size_t end) {
 		std::uint64_t out = 0;
 		for (std::size_t k = i; k < n; ++k) {
 			if (ids_[k] == dictionary::no_id || !step_id(dict, node, out, ids_[k])) { break; }
-			units += normalized_[k] > 0xFFFF ? 2 : 1;
+			units += normalized[k] > 0xFFFF ? 2 : 1;
 			if (node.is_final) {
 				lengths[count] = std::uint32_t(k - i + 1);
 				values[count] = std::uint32_t(out + node.final_output);
@@ -308,7 +316,7 @@ void segmenter::divide_range(std::size_t begin, std::size_t end) {
 			}
 			if (units >= max_word_units) { break; }
 		}
-		if ((count == 0 || lengths[0] != 1) && !is_hangul_syllable(normalized_[i])) {
+		if ((count == 0 || lengths[0] != 1) && !is_hangul_syllable(normalized[i])) {
 			values[count] = max_cost;
 			lengths[count++] = 1;
 		}
@@ -321,10 +329,10 @@ void segmenter::divide_range(std::size_t begin, std::size_t end) {
 		}
 
 		// A run of katakana is a candidate word whatever the dictionary says.
-		const bool katakana = is_katakana(normalized_[i]);
+		const bool katakana = is_katakana(normalized[i]);
 		if (!prev_katakana && katakana) {
 			int run = 1;
-			for (std::size_t j = i + 1; j < n && run < max_katakana_group && is_katakana(normalized_[j]); ++j) { ++run; }
+			for (std::size_t j = i + 1; j < n && run < max_katakana_group && is_katakana(normalized[j]); ++j) { ++run; }
 			if (run < max_katakana_group) {
 				const std::uint32_t c = cost_[i] + katakana_cost(run);
 				if (c < cost_[i + std::size_t(run)]) {
@@ -348,7 +356,7 @@ void segmenter::divide_range(std::size_t begin, std::size_t end) {
 	std::size_t last = 0;
 	bool any = false;
 	for (auto it = path_.rbegin(); it != path_.rend(); ++it) {
-		const std::size_t pos = map_[*it];
+		const std::size_t pos = positions[*it];
 		if (!any || pos > last) {
 			if (pos != begin) { breaks_.push_back(pos); }
 		}
@@ -369,6 +377,11 @@ int dictionary_cost(std::u32string_view word) {
 		if (id == dictionary::no_id || !step_id(dict, node, out, id)) { return -1; }
 	}
 	return node.is_final && !word.empty() ? int(out + node.final_output) : -1;
+}
+
+std::size_t dictionary_bytes() noexcept {
+	using namespace dictionary;
+	return fst_size + sizeof id_top + sizeof id_mid + sizeof id_leaves;
 }
 
 }  // namespace detail

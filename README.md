@@ -11,6 +11,8 @@ Header-only text analyzer for C++20: turns text into index terms exactly as Xapi
 TermGenerator does. Words, case folding, `Z`-prefixed stems, stop words, CJK n-grams, wdf
 and positions all match Xapian 2.1.0, at 1.8 to 2.7 times its speed. Reach for it when the terms
 you index have to match a Xapian index or a Xapian-style query parser.
+The term generator is header-only. It also splits Chinese, Japanese and Korean text into words exactly as ICU's word break
+iterator does, with no ICU at runtime, in a small compiled library ([CJK words](#-cjk-words)).
 
 ## ✨ Highlights
 
@@ -25,7 +27,10 @@ you index have to match a Xapian index or a Xapian-style query parser.
 - **One word rule for both sides.** `word_scanner` is the indexer's word rule on its own,
   so a query parser sees the same words the indexer saw.
 - **Fuzzed.** A libFuzzer target checks that terms are valid UTF-8, bounded in length and
-  in increasing positions; CI runs ASan and UBSan.
+  in increasing positions, another that segmenting untrusted text stays in bounds; CI runs
+  ASan and UBSan.
+- **CJK words.** `cjk::segmenter` gives ICU 78.3's word boundaries (UAX #29 rules plus ICU's
+  Chinese/Japanese dictionary), with ICU only as the test oracle ([CJK words](#-cjk-words)).
 
 ## 🚀 Quick start
 
@@ -48,6 +53,23 @@ int main() {
 The sink receives each term occurrence with its wdf increment and its position (0 for
 none). [docs/API.md](docs/API.md) covers the strategies, fields and `word_scanner`.
 
+## 🀄 CJK words
+
+```cpp
+#include "cjk/segmenter.hh"   // target analysis::cjk
+
+analysis::cjk::segmenter s("私は東京大学の学生です");
+for (analysis::cjk::segment g; s.next(g);) {
+	// 私 は 東京 大学 の 学生 です, each word_kind::ideo; spaces and punctuation are word_kind::none
+}
+```
+
+Segments cover the text in order, as byte offsets; `kind` is ICU's rule status
+(`none`, `number`, `letter`, `ideo`). Rules decide every boundary and ICU's dictionary
+divides runs of Han and kana by least total cost; Hangul stays whole, as in ICU. How it
+works, what was verified, and where it differs from ICU (Thai, Lao, Khmer, Myanmar):
+[docs/cjk-segmenter.md](docs/cjk-segmenter.md).
+
 ## 📦 Installation
 
 Requires a C++20 compiler and CMake 3.14 or newer. CMake fetches
@@ -65,7 +87,7 @@ FetchContent_MakeAvailable(analysis)
 target_link_libraries(my_app PRIVATE analysis::analysis)
 ```
 
-Then `#include "analysis.hh"`.
+Then `#include "analysis.hh"`; link `analysis::cjk` for the segmenter.
 
 ## 🎯 When to use it
 
@@ -115,6 +137,7 @@ Without `ANALYSIS_BENCH_XAPIAN` the benchmark prints the `analysis` rows only.
 - [docs/API.md](docs/API.md): `term_generator`, its strategies and fields, the sink, and
   `word_scanner`.
 - [docs/RULES.md](docs/RULES.md): every tokenization rule and how it is verified.
+- [docs/cjk-segmenter.md](docs/cjk-segmenter.md): the CJK word segmenter and its dictionary.
 - [AGENTS.md](AGENTS.md): repository map and invariants.
 - [Catalog entry](https://github.com/Kronuz/cpp-libraries/blob/main/AGENTS.md#analysis):
   include line, target, dependencies and key API.
@@ -127,7 +150,14 @@ cmake --build build
 ctest --test-dir build
 ```
 
-The build includes `analysis_bench`; `-DANALYSIS_FUZZ=ON` adds the libFuzzer target.
+The build includes `analysis_bench`; `-DANALYSIS_FUZZ=ON` adds the libFuzzer targets. The ICU
+oracle tools need ICU 78 (`-DANALYSIS_ICU_TOOLS=ON -DICU_ROOT=...`):
+
+```sh
+build/analysis_icu_compare corpus test/corpora/*.txt   # every boundary against ICU
+build/analysis_icu_compare sweep                       # every code point in 14 contexts
+build/analysis_icu_compare bench 20 test/corpora/*.txt # MB/s next to ICU
+```
 
 ## 🤝 Contributing
 
@@ -138,3 +168,10 @@ before opening a pull request; CI must pass on every platform.
 ## 📄 License
 
 MIT, Copyright (c) 2026 Germán Méndez Bravo. See [LICENSE](LICENSE).
+
+The CJK segmenter carries ICU data: `cjk/tables.hh` (generated from ICU 78.3's word
+break rules and Unicode data) and `data/cjdict.txt` (ICU 78.3's Chinese/Japanese
+dictionary, unchanged), under the Unicode License v3 (Unicode-3.0), the dictionary also
+under Google's BSD license with the notices of its sources, libtabe and IPADIC. Both are
+quoted in [LICENSE-ICU](LICENSE-ICU). The test corpora are public domain
+([test/corpora](test/corpora/README.md)).

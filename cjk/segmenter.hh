@@ -94,6 +94,9 @@ namespace detail {
 // The cost of a word in the dictionary, or -1 when it is not one (for tests).
 int dictionary_cost(std::u32string_view word);
 
+// Bytes of the built-in dictionary: the FST and the code point to id table.
+std::size_t dictionary_bytes() noexcept;
+
 }  // namespace detail
 
 }  // namespace analysis::cjk

@@ -403,6 +403,7 @@ int bench(int rounds, int argc, char** argv) {
 	icu_words icu;
 	analysis::cjk::segmenter seg;
 	using clock = std::chrono::steady_clock;
+	std::printf("dictionary: %zu bytes built in\n", analysis::cjk::detail::dictionary_bytes());
 	for (int f = 0; f < argc; ++f) {
 		const std::string text = read_file(argv[f]);
 		const icu::UnicodeString utf16 = icu::UnicodeString::fromUTF8(text);

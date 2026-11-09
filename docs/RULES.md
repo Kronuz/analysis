@@ -35,6 +35,9 @@ reproduced here without its source.
   unigrams plus positionless bigrams of adjacent pairs; other characters next to them
   form separate words.
 
+- **CJK words** (`cjk::segmenter`, a separate API): ICU 78.3's word boundaries, not
+  Xapian's; see [cjk-segmenter.md](cjk-segmenter.md).
+
 ## Correctness
 
 The test replays 966 oracle vectors (46 texts under every stem strategy with and without
