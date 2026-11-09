@@ -4,6 +4,8 @@
 //       ICU's segments of each line of CASES (escapes \n \r \t \\ \uXXXX \UXXXXXXXX) and of
 //       RANDOM generated strings, for test/cjk_test.cc to replay.
 //   icu_compare corpus FILE...    every boundary and kind against ICU's, differences listed
+//   icu_compare lines FILE... > test/vectors/cjk-corpora.txt
+//       ICU's segments of each line of each FILE, as "NAME LINE LENGTHKIND...", for ctest
 //   icu_compare sweep             every code point in a set of contexts
 //   icu_compare dict CJDICT_TXT   ICU's compiled cjdict against the text and our dictionary
 //   icu_compare bench ROUNDS FILE...  MB/s of both on each file
@@ -216,6 +218,30 @@ int vectors(const char* cases, int random) {
 			first = false;
 		}
 		std::printf("%s]}\n", out.c_str());
+	}
+	return 0;
+}
+
+// Per non-empty line of each file: its name, line number, then each segment's byte length
+// with its kind as the last digit.
+int lines(int argc, char** argv) {
+	icu_words icu;
+	for (int f = 0; f < argc; ++f) {
+		std::string name = argv[f];
+		name = name.substr(name.find_last_of('/') + 1);
+		std::istringstream in(read_file(argv[f]));
+		std::size_t n = 0;
+		for (std::string line; std::getline(in, line);) {
+			++n;
+			if (line.empty()) { continue; }
+			std::string out = name + " " + std::to_string(n);
+			std::size_t at = 0;
+			for (auto& b : icu(line)) {
+				out += " " + std::to_string((b.end - at) * 10 + std::size_t(b.kind));
+				at = b.end;
+			}
+			std::printf("%s\n", out.c_str());
+		}
 	}
 	return 0;
 }
@@ -447,9 +473,10 @@ int main(int argc, char** argv) {
 	const std::string mode = argc > 1 ? argv[1] : "";
 	if (mode == "vectors" && argc == 4) { return vectors(argv[2], std::atoi(argv[3])); }
 	if (mode == "corpus" && argc > 2) { return corpus(argc - 2, argv + 2); }
+	if (mode == "lines" && argc > 2) { return lines(argc - 2, argv + 2); }
 	if (mode == "sweep" && argc == 2) { return sweep(); }
 	if (mode == "dict" && argc == 3) { return dict(argv[2]); }
 	if (mode == "bench" && argc > 3) { return bench(std::atoi(argv[2]), argc - 3, argv + 3); }
-	std::fprintf(stderr, "usage: icu_compare vectors CASES RANDOM | corpus FILE... | sweep | dict CJDICT_TXT | bench ROUNDS FILE...\n");
+	std::fprintf(stderr, "usage: icu_compare vectors CASES RANDOM | corpus FILE... | lines FILE... | sweep | dict CJDICT_TXT | bench ROUNDS FILE...\n");
 	return 2;
 }

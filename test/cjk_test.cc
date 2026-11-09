@@ -1,5 +1,5 @@
-// cjk::segmenter: replays ICU's segments recorded by tools/icu_compare.cc (cjk.jsonl in
-// argv[1]), checks every word of data/cjdict.txt (argv[2]) in the built dictionary, and
+// cjk::segmenter: replays ICU's segments recorded by tools/icu_compare.cc (cjk.jsonl and
+// cjk-corpora.txt in argv[1]), checks every word of data/cjdict.txt (argv[2]) in the built dictionary, and
 // pins the API's behavior on its own cases.
 #include "cjk/segmenter.hh"
 #include "json.hh"
@@ -7,6 +7,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <map>
+#include <sstream>
 #include <set>
 #include <string>
 #include <vector>
@@ -85,6 +87,43 @@ void vectors(const std::string& path) {
 	std::printf("cjk.jsonl: %zu texts, %zu boundaries\n", n, boundaries);
 }
 
+// ICU's segments of every line of the corpora (cjk-corpora.txt), against the texts in
+// test/corpora.
+void corpora(const std::string& vectors, const std::string& dir) {
+	std::ifstream in(vectors);
+	CHECK(in.good());
+	std::map<std::string, std::vector<std::string>> texts;
+	segmenter s;
+	std::size_t lines = 0, segments = 0;
+	for (std::string line; std::getline(in, line);) {
+		std::istringstream fields(line);
+		std::string name;
+		std::size_t n;
+		fields >> name >> n;
+		auto& t = texts[name];
+		if (t.empty()) {
+			std::ifstream f(dir + "/" + name);
+			for (std::string l; std::getline(f, l);) { t.push_back(l); }
+			CHECK(!t.empty());
+		}
+		CHECK(n >= 1 && n <= t.size());
+		if (n < 1 || n > t.size()) { continue; }
+		std::string want;
+		std::size_t at = 0;
+		for (std::size_t v; fields >> v;) {
+			at += v / 10;
+			want += "[" + std::to_string(at) + "," + std::to_string(v % 10) + "]";
+			++segments;
+		}
+		const std::string got = segments_of(s, t[n - 1]);
+		if (got != want) { std::fprintf(stderr, "%s:%zu differs from ICU\n", name.c_str(), n); }
+		CHECK(got == want);
+		++lines;
+	}
+	CHECK(texts.size() == 3);
+	std::printf("cjk-corpora.txt: %zu lines, %zu segments\n", lines, segments);
+}
+
 void dictionary(const std::string& path) {
 	std::ifstream in(path, std::ios::binary);
 	CHECK(in.good());
@@ -152,6 +191,7 @@ int main(int argc, char** argv) {
 	}
 	cases();
 	vectors(std::string(argv[1]) + "/cjk.jsonl");
+	corpora(std::string(argv[1]) + "/cjk-corpora.txt", std::string(argv[1]) + "/../corpora");
 	dictionary(argv[2]);
 	if (failures) { std::fprintf(stderr, "%d failures\n", failures); }
 	return failures ? 1 : 0;

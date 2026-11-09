@@ -103,16 +103,22 @@ second static-dictionary mechanism, so it belongs in Kronuz/fst if it is ever bu
 
 All with ICU 78.3 (`tools/icu_compare.cc`, built with `-DANALYSIS_ICU_TOOLS=ON`):
 
-- `vectors`: ICU's segments of 34 curated texts (`test/vectors/cjk-cases.txt`: every
+- `vectors`: ICU's segments of 35 curated texts (`test/vectors/cjk-cases.txt`: every
   UAX #29 rule, emoji, regional indicators, Hangul, halfwidth katakana with voicing
-  marks, compatibility ideographs, supplementary Han, katakana runs around 20) and
-  3,000 random ones, recorded in `test/vectors/cjk.jsonl` and replayed by ctest.
+  marks, compatibility ideographs, supplementary Han, katakana runs around 20, a cost tie
+  ICU breaks by order) and 3,000 random ones, recorded in `test/vectors/cjk.jsonl` and
+  replayed by ctest.
 - `corpus`: the public-domain Chinese, Japanese and Korean corpora in `test/corpora`
-  (110,000 characters each), every boundary and kind.
+  (110,000 characters each), every boundary and kind. `lines` records ICU's segments of
+  each corpus line in `test/vectors/cjk-corpora.txt` (203,702 segments), which ctest
+  replays.
 - `sweep`: every code point, alone and doubled, in 14 contexts (31 million texts).
 - `dict`: ICU's compiled `cjdict.dict` has exactly the words and costs of
   `data/cjdict.txt`, and the built FST answers every one of them; ctest also checks every
   word and 104,954 non-word prefixes against the text.
+- `tools/cjk_mutants.sh BUILD_DIR` breaks the segmenter twelve ways (cost ties, the
+  unknown-character and katakana costs, NFKC composition, position mapping, the
+  Common-script skip, rule status, longest match) and checks ctest fails on each.
 
 ## Where it differs from ICU
 
@@ -130,6 +136,7 @@ All with ICU 78.3 (`tools/icu_compare.cc`, built with `-DANALYSIS_ICU_TOOLS=ON`)
 
 - `cjk/tables.hh`: `analysis_gen_tables > cjk/tables.hh` with the ICU to match; then
   record new vectors (`analysis_icu_compare vectors test/vectors/cjk-cases.txt 3000 >
-  test/vectors/cjk.jsonl`) and rerun `corpus`, `sweep` and `dict`.
+  test/vectors/cjk.jsonl`, `analysis_icu_compare lines test/corpora/{zh,ja,ko}.txt >
+  test/vectors/cjk-corpora.txt`) and rerun `corpus`, `sweep` and `dict`.
 - `data/cjdict.txt`: `icu4c/source/data/brkitr/dictionaries/cjdict.txt` of the same ICU
   release.

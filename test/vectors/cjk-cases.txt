@@ -36,3 +36,5 @@ abcカタカナ123漢字def 漢字abc 1漢 a한 한a 한1
 今日ばいい天気 漢゛字 漢〱字 ー漢字 漢字ー ゛ー漢 〱ーカ
 東京́都 東京︀都 東‍京
 日本語ｶﾀｶﾅ日本語
+# Least-cost ties and the cost of an unknown character (found by search against the dictionary).
+ゃ織襪艪欺君罔上臈
