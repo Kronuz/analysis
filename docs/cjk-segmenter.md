@@ -99,6 +99,21 @@ bytes, since 208 distinct costs at the leaves keep suffixes apart. A level-order
 with costs in a byte array indexed by rank would be about 1.4 MB by estimate; it is a
 second static-dictionary mechanism, so it belongs in Kronuz/fst if it is ever built.
 
+## Speed
+
+`analysis_icu_compare bench 30` on the three corpora, x86_64 macOS, Release, in an
+exclusive hold (job 261109-155857-9dff90 at analysis:3e55476): best of 30 rounds in MB/s
+of UTF-8 input, median in parentheses. ICU is measured on UTF-8 and on UTF-16 input; the
+word counts of all three agree.
+
+| Corpus | Ours | ICU (UTF-8) | ICU (UTF-16) | Ours / ICU UTF-8 |
+|---|---:|---:|---:|---:|
+| zh | 23.53 (23.22) | 8.49 (8.35) | 11.05 (10.78) | 2.77x |
+| ja | 19.55 (18.51) | 9.41 (8.97) | 11.91 (11.44) | 2.08x |
+| ko | 108.80 (105.36) | 27.53 (26.76) | 39.98 (38.83) | 3.95x |
+
+The segmenter's object code is 2,146,784 bytes, 2,127,876 of them the dictionary.
+
 ## Verified against ICU
 
 All with ICU 78.3 (`tools/icu_compare.cc`, built with `-DANALYSIS_ICU_TOOLS=ON`):
