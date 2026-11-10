@@ -51,8 +51,8 @@ struct segment {
 };
 
 // Splits text into the segments between consecutive word boundaries; together they
-// cover the text. Bytes that are not valid UTF-8 read as ISO-8859-1, one at a time, as
-// in term_generator. Reuse one segmenter across texts to keep its buffers.
+// cover the text. Ill-formed sequences, other than encoded surrogates (which read as
+// their code points), read as ISO-8859-1 one byte at a time, as in term_generator. Reuse one segmenter across texts to keep its buffers.
 class segmenter {
 public:
 	segmenter() = default;

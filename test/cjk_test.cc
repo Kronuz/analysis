@@ -41,6 +41,14 @@ std::string segments_of(segmenter& s, std::string_view text) {
 	return out;
 }
 
+// The segments' end offsets, comma separated.
+std::string ends_of(std::string_view text) {
+	segmenter s(text);
+	std::string out;
+	for (segment g; s.next(g);) { out += (out.empty() ? "" : ",") + std::to_string(g.end); }
+	return out;
+}
+
 std::string words_of(std::string_view text) {
 	segmenter s(text);
 	std::string out;
@@ -174,6 +182,12 @@ void cases() {
 	CHECK(words_of("私は東京大学の学生です") == "私:i は:i 東京:i 大学:i の:i 学生:i です:i");
 	// Halfwidth katakana normalizes for the lookup; the boundaries stay in the original.
 	CHECK(words_of("ｺﾝﾋﾟｭｰﾀｰ") == "ｺﾝﾋﾟｭｰﾀｰ:i");
+
+	// Complex_Context scripts stay whole where ICU divides them (ICU: สวัสดี|ครับ); a script
+	// change still cuts (ICU: 日本|ไทย|語).
+	CHECK(ends_of("สวัสดีครับ") == "30");
+	CHECK(ends_of("ภาษาไทยเป็นภาษาราชการ") == "63");
+	CHECK(ends_of("日本ไทย語") == "6,15,18");
 
 	// Invalid UTF-8 reads one byte at a time, and the segments still tile the text.
 	const std::string bad = "\xff\xfe\xe6\x97\xa5\x80\xe6\x9c\xac\xe8\xaa";

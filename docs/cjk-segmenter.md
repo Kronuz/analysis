@@ -139,9 +139,11 @@ All with ICU 78.3 (`tools/icu_compare.cc`, built with `-DANALYSIS_ICU_TOOLS=ON`)
 
 - **Thai, Lao, Khmer, Myanmar** and the other Line_Break=Complex_Context scripts: ICU
   divides them with per-script dictionaries or LSTM models; the segmenter leaves their
-  runs whole. The sweep counts these differences apart.
-- **Invalid UTF-8** reads as ISO-8859-1 one byte at a time, as in `term_generator`; ICU
-  reads U+FFFD. Boundaries fall on the same bytes only for valid text.
+  runs whole (`test/cjk_test.cc` pins that). The sweep counts these differences apart, but
+  its 868 texts are the isolated code points that differ, not a measure of the divergence:
+  real Thai or Lao text differs at nearly every word boundary.
+- **Invalid UTF-8**, other than encoded surrogates (read as their code points), reads as
+  ISO-8859-1 one byte at a time, as in `term_generator`; ICU reads U+FFFD. Boundaries fall on the same bytes only for valid text.
 - **ICU's engine loading.** The model is ICU after its Chinese/Japanese engine has
   loaded. A process whose first dictionary character is U+30FC, U+FF70, U+FF9E or U+FF9F
   (Script=Common) has ICU skip it as unhandled instead; the oracle loads the engine first.
