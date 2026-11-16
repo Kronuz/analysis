@@ -4,6 +4,10 @@
 
 ```
 analysis.hh            term_generator, stopper, is_word_char, is_ngram_char.
+cjk/                   analysis::cjk target (CMake alias of analysis_cjk): UAX #29-style
+                       CJK segmenter (segmenter.hh/.cc) and generated tables.hh.
+data/cjdict.txt        ICU 78.3's CJ word break dictionary, built into analysis::cjk.
+LICENSE-ICU            Notices for the ICU-derived data (tables.hh, cjdict.txt).
 test/test.cc           Replays test/vectors (oracle output) and the code-point sweeps.
 test/vectors/          termgen.jsonl, termgen-xapiand.jsonl, chars.txt, infix.txt.
 fuzz/fuzz_index.cc     libFuzzer: valid UTF-8 terms, bounded length, increasing positions.
