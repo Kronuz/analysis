@@ -4,8 +4,8 @@
 
 ```
 analysis.hh            term_generator, stopper, is_word_char, is_ngram_char.
-cjk/                   analysis::cjk target (CMake alias of analysis_cjk): UAX #29-style
-                       CJK segmenter (segmenter.hh/.cc) and generated tables.hh.
+cjk/                   analysis::cjk target (CMake alias of analysis_cjk): word segmenter (ICU
+                       rules + dictionary): segmenter.hh/.cc, generated tables.hh.
 data/cjdict.txt        ICU 78.3's CJ word break dictionary, built into analysis::cjk.
 LICENSE-ICU            Notices for the ICU-derived data (tables.hh, cjdict.txt).
 test/test.cc           Replays test/vectors (oracle output) and the code-point sweeps.
